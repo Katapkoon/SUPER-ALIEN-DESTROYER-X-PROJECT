@@ -20,7 +20,16 @@ class Lives(pygame.sprite.Sprite):
     def decrement_life(self):
         self.num_lives -= 1
         if self.num_lives <= 0:
-            self.num_lives = 0
+            pass
+        self.image = pygame.Surface(self.size, pygame.SRCALPHA, 32).convert_alpha()
+        self.image.blit(self.heart_image,(10,0))
+        self.lives_counter = self.font.render(f'x {self.num_lives}',False,(255,255,255))
+        self.image.blit(self.lives_counter, (60,0))
+
+    def increment_life(self):
+        self.num_lives += 1
+        if self.num_lives >= 3:
+            self.num_lives = 3
         self.image = pygame.Surface(self.size, pygame.SRCALPHA, 32).convert_alpha()
         self.image.blit(self.heart_image,(10,0))
         self.lives_counter = self.font.render(f'x {self.num_lives}',False,(255,255,255))

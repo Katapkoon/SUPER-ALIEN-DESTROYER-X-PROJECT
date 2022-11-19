@@ -1,37 +1,11 @@
 import pygame
 import os
 import random
+from explosion import Explosion
 
 class Golem(pygame.sprite.Sprite):
     def __init__(self):
         super(Golem,self).__init__()
-        self.img_ex1 = pygame.image.load(os.path.join('Assets','ex1.png')).convert_alpha()
-        self.img_ex1 = pygame.transform.scale(self.img_ex1,(100,100))
-
-        self.img_ex2 = pygame.image.load(os.path.join('Assets','ex2.png')).convert_alpha()
-        self.img_ex2 = pygame.transform.scale(self.img_ex2,(100,100))
-
-        self.img_ex3 = pygame.image.load(os.path.join('Assets','ex3.png')).convert_alpha()
-        self.img_ex3 = pygame.transform.scale(self.img_ex3,(100,100))
-
-        self.img_ex4 = pygame.image.load(os.path.join('Assets','ex4.png')).convert_alpha()
-        self.img_ex4 = pygame.transform.scale(self.img_ex4,(100,100))
-
-        self.img_ex5 = pygame.image.load(os.path.join('Assets','ex5.png')).convert_alpha()
-        self.img_ex5 = pygame.transform.scale(self.img_ex5,(100,100))
-
-        self.img_ex6 = pygame.image.load(os.path.join('Assets','ex6.png')).convert_alpha()
-        self.img_ex6 = pygame.transform.scale(self.img_ex6,(100,100))
-
-        self.img_ex7 = pygame.image.load(os.path.join('Assets','ex7.png')).convert_alpha()
-        self.img_ex7 = pygame.transform.scale(self.img_ex7,(100,100))
-
-        self.img_ex8 = pygame.image.load(os.path.join('Assets','ex8.png')).convert_alpha()
-        self.img_ex8 = pygame.transform.scale(self.img_ex8,(100,100))
-
-        self.anim_explosion = [self.img_ex1, self.img_ex2, self.img_ex3, self.img_ex4, self.img_ex5, self.img_ex6, self.img_ex7, self.img_ex8]
-        self.anim_index = 0
-
         self.is_destroyed = False
         self.destroyed_sound = pygame.mixer.Sound(os.path.join('Assets','Explosion.wav'))
         self.hit_sound = pygame.mixer.Sound(os.path.join('Assets','hit.wav'))
@@ -49,21 +23,26 @@ class Golem(pygame.sprite.Sprite):
 
         self.is_alive = True
 
-        self.timer = 100
+        self.timer = 500
+        self.alpha = 0
 
     def update(self):
         self.rect.y += self.vel_y
         if self.is_destroyed:
-            max_index = len(self.anim_explosion) - 1
+            explosion = Explosion(self.rect.x + 50 - 40,self.rect.y + 50 - 40)
+            self.explosion_group.add(explosion)
+            self.is_destroyed = False
+            self.is_alive = False
         
-            if self.anim_index > max_index:
-                self.kill()
-            else:
-                self.image = self.anim_explosion[self.anim_index]
-                self.anim_index += 1
+        if not self.is_alive:
+            self.image.set_alpha(self.alpha)
+            self.timer -= 1
 
-    def get_hit(self):
-        self.hp -= 1
+        if self.timer <= 0:
+            self.kill()
+
+    def get_hit(self,hp):
+        self.hp -= hp
         pygame.mixer.Channel(2).play(self.hit_sound)
         if self.hp <= 0:
             pygame.mixer.Channel(1).play(self.destroyed_sound)

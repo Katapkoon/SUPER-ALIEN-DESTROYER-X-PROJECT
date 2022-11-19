@@ -1,4 +1,5 @@
 import pygame
+import pygame_gui
 import os
 import time
 from states.title import Title
@@ -6,7 +7,7 @@ from states.title import Title
 class Game():
     def __init__(self):
         pygame.init()
-
+        
         #Volume Setup
         pygame.mixer.Channel(0).set_volume(.1)
         pygame.mixer.Channel(1).set_volume(.1)
@@ -15,6 +16,7 @@ class Game():
         pygame.mixer.Channel(4).set_volume(.1)
         pygame.mixer.Channel(5).set_volume(.1)
         pygame.mixer.Channel(6).set_volume(.1)
+        pygame.mixer.Channel(7).set_volume(.1)
 
         #Display Setup
         self.FPS = 60
@@ -23,6 +25,11 @@ class Game():
         self.game_canvas = pygame.Surface((self.width,self.height))
         self.screen = pygame.display.set_mode((self.width,self.height))
         pygame.display.set_caption('Super Alien Destroyer X')
+
+        self.clock = pygame.time.Clock()
+        self.manager = pygame_gui.UIManager((self.width,self.height))
+
+        self.text_input = pygame_gui.elements.UITextEntryLine(relative_rect=pygame.Rect((390,600),(500,50)),manager= self.manager,object_id="#main_text_entry")
 
         self.running = True
         self.playing = True
@@ -37,15 +44,17 @@ class Game():
 
         self.actions = {'escape': False, 'e': False}
 
+        self.temp_text = None
+        self.text_entered = False
+        
     def game_loop(self):
-        self.clock = pygame.time.Clock()
         while self.playing:
-            self.clock.tick(self.FPS) 
+            self.ui_refresh_rate = self.clock.tick(self.FPS)/1000 
             self.get_delta_time()
             self.get_events()
             self.update()
             self.render()
-            #print(len(self.state_stack))
+            
     def get_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -56,7 +65,12 @@ class Game():
                     self.actions['escape'] = True
                 if event.key == pygame.K_e:
                     self.actions['e'] = True
-    
+            if event.type == pygame_gui.UI_TEXT_ENTRY_FINISHED and event.ui_object_id == "#main_text_entry":
+                self.temp_text = event.text
+                self.text_entered = True
+            
+            self.manager.process_events(event)
+
     def update(self):
         self.state_stack[-1].update(self.delta_time,self.actions)
 

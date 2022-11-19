@@ -1,5 +1,6 @@
 import pygame, os
 import math
+import random
 from states.state import State
 from star_animation import Background
 from player import Player
@@ -9,15 +10,29 @@ from enemy import Enemy
 from enemy2 import Golem
 from enemy3 import SideEnemy
 from states.pause_menu import PauseMenu
+from states.gameover import GameOver
+from item_spawner import ItemSpawner
+from items.bomb import Bomb
+from items.heart import Heart
+from items.missile import Missile
+from items.widebullet_item import WideBulletItem
+from bullet import Bullet
+from missile_bullet import MissileBullet
+from wide_bullet import WideBullet
 
 class MainGame(State):
     def __init__(self,game):
         State.__init__(self,game)
 
+        self.gameOver = False
+        self.canPressButton = True
+        self.game.text_input.set_text('')
         #Initialize Timer
         self.current_time = 0
         self.damaged_time = 0
+        self.item_time = 0
         self.damaged_time_bullet = 0
+        self.gameOver_timer = 100
 
         #In-Game Music setup
         pygame.mixer.music.load(os.path.join('BGM','Stargunner.mp3'))
@@ -48,6 +63,8 @@ class MainGame(State):
         self.hp_text_image = pygame.image.load(os.path.join('Assets','hp_text.png')).convert_alpha()
         self.hp_text = pygame.transform.scale(self.hp_text_image,(50,25))
 
+        self.score_check = 50000
+
         #Initialize shooting cooldown
         self.current_shooting_cooldown = 0
         self.shooting_cooldown_amount = 10
@@ -56,6 +73,9 @@ class MainGame(State):
         self.enemy_spawner = EnemySpawner()
 
         self.enemy_bullets = pygame.sprite.Group()
+
+        #Initialize item spawner
+        self.item_spawner = ItemSpawner()
     
     def wave_value(self):
         value = math.sin(pygame.time.get_ticks())
@@ -70,13 +90,13 @@ class MainGame(State):
 
         #Check player movement
         key_pressed = pygame.key.get_pressed()
-        if key_pressed[pygame.K_w] and self.player.rect.y > 0:
+        if key_pressed[pygame.K_w] and self.player.rect.y > 0 and self.canPressButton:
             self.player.rect.y -= self.player.speed
-        if key_pressed[pygame.K_s] and self.player.rect.y < 720-100:
+        if key_pressed[pygame.K_s] and self.player.rect.y < 720-100 and self.canPressButton:
             self.player.rect.y += self.player.speed
-        if key_pressed[pygame.K_a] and self.player.rect.x > 0:
+        if key_pressed[pygame.K_a] and self.player.rect.x > 0 and self.canPressButton:
             self.player.rect.x -= self.player.speed
-        if key_pressed[pygame.K_d] and self.player.rect.x < 1280-100:
+        if key_pressed[pygame.K_d] and self.player.rect.x < 1280-100 and self.canPressButton:
             self.player.rect.x += self.player.speed
         if key_pressed[pygame.K_SPACE] and self.current_shooting_cooldown == 0 and self.canAttack:
             self.player.shoot()
@@ -110,18 +130,26 @@ class MainGame(State):
         self.score_group.update()
         for enemy in self.enemy_spawner.enemy_group:
             enemy.explosion_group.update()
+        self.player.explosion_group.update()
+        self.item_spawner.update()
 
         #Check collision
         for enemy in self.enemy_spawner.enemy_group:
             for bullet in self.player.bullets:
                 if pygame.sprite.collide_rect(bullet,enemy) and enemy.is_alive:
-                    enemy.get_hit()
-                    bullet.kill()
+                    if type(bullet) is Bullet:
+                        enemy.get_hit(1)
+                        bullet.kill()
+                    if type(bullet) is MissileBullet:
+                        enemy.get_hit(10)
+                        bullet.kill()
+                    if type(bullet) is WideBullet:
+                        enemy.get_hit(10)
 
         for enemy in self.enemy_spawner.enemy_group:
-            if pygame.sprite.collide_rect(enemy,self.player) and enemy.is_alive and not self.vulnerable:
+            if pygame.sprite.collide_rect(enemy,self.player) and enemy.is_alive and not self.vulnerable and not self.player.is_destroyed:
                 self.damaged_time = pygame.time.get_ticks()
-                enemy.get_hit()
+                enemy.get_hit(1)
                 self.vulnerable = True
                 if type(enemy) is Enemy:
                     self.player.get_hit(1000)
@@ -133,7 +161,7 @@ class MainGame(State):
         
         for enemy in  self.enemy_spawner.enemy_group:
             for bullet in enemy.bullets:
-                if pygame.sprite.collide_rect(bullet,self.player) and not self.vulnerable:
+                if pygame.sprite.collide_rect(bullet,self.player) and not self.vulnerable and not self.player.is_destroyed:
                     self.damaged_time = pygame.time.get_ticks()
                     self.player.get_hit(500)
                     self.vulnerable = True
@@ -143,9 +171,51 @@ class MainGame(State):
 
         for enemy in self.enemy_spawner.enemy_group:
             if type(enemy) is Golem:
-                if enemy.rect.y == 720:
+                if enemy.rect.y == 720 and enemy.is_alive:
                     self.player.health_border.lives.decrement_life()
+            
+            if enemy.is_destroyed:
+                if type(enemy) is Enemy:
+                    self.item_spawner.spawn_item(enemy.rect.x + 35,enemy.rect.y + 35)
+                    self.score.score_num += 500 + (self.player.rect.y - enemy.rect.y)
+                elif type(enemy) is Golem:
+                    self.item_spawner.spawn_item(enemy.rect.x + 50,enemy.rect.y + 50)
+                    self.score.score_num += 750 + (self.player.rect.y - enemy.rect.y)
+                elif type(enemy) is SideEnemy:
+                    self.item_spawner.spawn_item(enemy.rect.x + 50,enemy.rect.y + 25)
+                    self.score.score_num += 1000 + (self.player.rect.y - enemy.rect.y)
         
+        for item in self.item_spawner.item_group:
+            if pygame.sprite.collide_rect(item, self.player):
+                if type(item) is Bomb:
+                    self.score.score_num += 200
+                    item.kill()
+                    pygame.mixer.Channel(7).play(pygame.mixer.Sound(os.path.join('Assets', 'collect.mp3')))
+                    for enemy in self.enemy_spawner.enemy_group:
+                        if enemy.is_alive:
+                            enemy.get_hit(10)
+                if type(item) is Heart:
+                    self.player.health_border.healthBar.reset_hp()
+                    self.score.score_num += 200
+                    self.player.health_border.lives.increment_life()
+                    item.kill()
+                    pygame.mixer.Channel(7).play(pygame.mixer.Sound(os.path.join('Assets', 'collect.mp3')))
+                if type(item) is Missile:
+                    self.score.score_num += 200
+                    self.item_spawner.can_spawnItem = False
+                    self.item_time = pygame.time.get_ticks()
+                    self.shooting_cooldown_amount = 12
+                    item.kill()
+                    self.player.current_state = self.player.states['missile']
+                    pygame.mixer.Channel(7).play(pygame.mixer.Sound(os.path.join('Assets', 'collect.mp3')))
+                if type(item) is WideBulletItem:
+                    self.item_time = pygame.time.get_ticks()
+                    self.score.score_num += 200
+                    self.item_spawner.can_spawnItem = False
+                    item.kill()
+                    self.player.current_state = self.player.states['wide bullet']
+                    pygame.mixer.Channel(7).play(pygame.mixer.Sound(os.path.join('Assets', 'collect.mp3')))
+
         if self.vulnerable:
             alpha = self.wave_value()
             self.player.image.set_alpha(alpha)
@@ -155,7 +225,11 @@ class MainGame(State):
             self.player.image = pygame.image.load(os.path.join('Assets', 'ship.png')).convert_alpha()
             self.player.image = pygame.transform.scale(self.player.image,(self.player.width,self.player.length))
         
-        
+        #Reset Player Buffs
+        if self.current_time - self.item_time > 10000:
+            self.item_spawner.can_spawnItem = True
+            self.player.current_state = self.player.states['normal']
+            self.shooting_cooldown_amount = 10
 
         #Check player's position
         self.player.move_check()
@@ -164,8 +238,34 @@ class MainGame(State):
         self.player.health_border.healthBar.update_hp()
 
         self.game.reset_keys()
-        print('Current time {}'.format(self.current_time) + ' ' + 'Damaged time {}'.format(self.damaged_time) + ' ' + 'Damaged time 2 {}'.format(self.damaged_time_bullet) )
+        #print('Current time {}'.format(self.current_time) + ' ' + 'Damaged time {}'.format(self.damaged_time) + ' ' + 'Damaged time 2 {}'.format(self.damaged_time_bullet) )
+        
+        #print(self.gameOver_timer)
 
+        if self.player.health_border.lives.num_lives <= 0:
+            self.player.is_destroyed = True 
+            self.vulnerable = False
+            self.canAttack = False
+            self.canPressButton = False
+            self.gameOver = True    
+        
+        if self.gameOver:
+            self.player.health_border.lives.kill()
+            self.player.health_border.kill()
+            self.player.health_border.healthBar.kill()
+            self.player.image.set_alpha(0)
+            self.gameOver_timer -= 1
+        
+        if self.gameOver_timer <= 0:
+            self.player.kill()
+            new_state = GameOver(self.game,self.score.score_num)
+            new_state.enter_state()
+            pygame.mixer.music.stop()
+
+        if self.score.score_num > self.score_check:
+            self.enemy_spawner.init_spawn_rate -= 2
+            self.score_check += 50000
+        
     def render(self, display):
         display.fill((0,0,0))
         display.blit(self.background, (0,0))
@@ -180,11 +280,15 @@ class MainGame(State):
         if self.moving:  #Render blue flame when changing player's position
             display.blit(self.ship_jet,(self.player.rect.x + self.player.width/2 - self.ship_jet_width/2,self.player.rect.y + self.player.length - 10))
         #print(self.moving)
+        self.item_spawner.item_group.draw(display)
 
-        display.blit(self.hp_text,(25,720-20-20))
+        self.player.explosion_group.draw(display)
         self.player.health_border.healthBar_group.draw(display)
         self.player.health_border_group.draw(display)
-        display.blit(self.player.health_border.healthBar.text,(125,720-20-16))
-        
+        if not self.gameOver:
+            display.blit(self.hp_text,(25,720-20-20))
+            display.blit(self.player.health_border.healthBar.text,(125,720-20-16))
+    
         #print(self.player.health_border.healthBar.hp)
-        
+        #print(str(self.player.health_border.lives.num_lives) + ' ' + str(self.player.alpha))
+        print(self.enemy_spawner.init_spawn_rate)

@@ -22,6 +22,7 @@ class Enemy(pygame.sprite.Sprite):
         self.explosion_group = pygame.sprite.Group()
         
 
+
         self.states = {'fly_down' : 'fly_down', 'attack': 'attack'}
         self.current_state = self.states['fly_down']
         self.init_state = True
@@ -53,7 +54,7 @@ class Enemy(pygame.sprite.Sprite):
         self.rect.y += self.vel_y
 
         if self.is_destroyed:
-            explosion = Explosion(self.rect.x,self.rect.y)
+            explosion = Explosion(self.rect.x + 35 - 40,self.rect.y)
             self.explosion_group.add(explosion)
             self.is_destroyed = False
             self.is_alive = False
@@ -65,15 +66,18 @@ class Enemy(pygame.sprite.Sprite):
         if self.timer <= 0:
             self.kill()
 
-    def get_hit(self):
-        self.hp -= 1
+    def get_hit(self,hp):
+        self.hp -= hp
         pygame.mixer.Channel(2).play(self.hit_sound)
         if self.hp <= 0:
+            
             pygame.mixer.Channel(1).play(self.destroyed_sound)
             self.is_destroyed = True
-        else:
+        elif self.hp == 1:
             self.image = pygame.image.load(os.path.join('Assets','enemy_hit.png')).convert_alpha()
             self.image = pygame.transform.scale(self.image,(70,70))
+        else:
+            self.image = pygame.image.load(os.path.join('Assets','enemy1.png')).convert_alpha()
 
     def state_fly_down(self):
         rand = [100,150,200,250,300,350,400]

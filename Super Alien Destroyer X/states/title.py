@@ -1,6 +1,8 @@
 import sys
 from states.state import State
 from states.main_game import MainGame 
+from states.about_creator import AboutCreator
+from states.leaderboard import Leaderboard
 from menu_button import Button
 from star_animation import Background
 from player import Player
@@ -12,11 +14,15 @@ class Title(State):
         State.__init__(self, game)
 
         #Initialize menu elements
+        self.font = pygame.font.Font((os.path.join('Assets','Fonts','ethnocentric rg.otf')), 16)
         self.start_button_image = pygame.image.load(os.path.join('Assets','Menu','start_button.png')).convert_alpha()
         self.exit_button_image = pygame.image.load(os.path.join('Assets','Menu','exit_button.png')).convert_alpha()
+        self.about_text = self.font.render('About',True ,(0,255,0))
+        self.leaderboard_text = self.font.render('Leaderboard',True ,(0,255,0))
         self.start_button = Button(300, 400, self.start_button_image)
         self.exit_button = Button(300, 600, self.exit_button_image)
-
+        self.about_button = Button(900,650,self.about_text)
+        self.leaderboard_button = Button(1100,650,self.leaderboard_text)
         #Menu Music setup
         pygame.mixer.music.load(os.path.join('BGM','Blue Eclipse.mp3'))
         pygame.mixer.music.set_volume(.1)
@@ -52,6 +58,8 @@ class Title(State):
         
         self.background_img_group.update()
         self.sprite_group.update()
+
+        self.game.reset_keys()
         
     def render(self, display):
         display.fill((0,0,0))
@@ -62,6 +70,12 @@ class Title(State):
         if self.exit_button.update(display):
             pygame.mixer.music.stop()
             sys.exit()
+        if self.about_button.update(display):
+            new_state = AboutCreator(self.game)
+            new_state.enter_state()
+        if self.leaderboard_button.update(display):
+            new_state = Leaderboard(self.game)
+            new_state.enter_state()
         
         self.background_img_group.draw(display)
         self.sprite_group.draw(display)

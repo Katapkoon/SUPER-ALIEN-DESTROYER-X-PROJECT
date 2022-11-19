@@ -18,9 +18,10 @@ class SideEnemy(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = self.rand_x
         if self.rand_x == self.start_x['2']:
+            self.image = pygame.transform.rotate(self.image, 180)
             self.dir_x = -1
         self.rect.y = self.start_y
-        self.vel_x = 15
+        self.vel_x = 15 #15
         self.vel_y = 0
         self.alpha = 0
         self.explosion_group = pygame.sprite.Group()
@@ -35,7 +36,7 @@ class SideEnemy(pygame.sprite.Sprite):
         self.rect.y += self.vel_y
 
         if self.is_destroyed:
-            explosion = Explosion(self.rect.x,self.rect.y)
+            explosion = Explosion(self.rect.x + 50 - 40,self.rect.y + 25 - 40)
             self.explosion_group.add(explosion)
             self.is_destroyed = False
             self.is_alive = False
@@ -47,8 +48,8 @@ class SideEnemy(pygame.sprite.Sprite):
         if self.timer <= 0:
             self.kill()
     
-    def get_hit(self):
-        self.hp -= 1
+    def get_hit(self,hp):
+        self.hp -= hp
         pygame.mixer.Channel(6).play(self.hit_sound)
         if self.hp <= 0:
             pygame.mixer.Channel(1).play(self.destroyed_sound)
