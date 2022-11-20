@@ -15,8 +15,8 @@ class Title(State):
         State.__init__(self, game)
 
         #Initialize menu elements
-        self.font_1 = pygame.font.Font((os.path.join('Assets','Fonts','ethnocentric rg.otf')), 24)
-        self.font_2 = pygame.font.Font((os.path.join('Assets','Fonts','ethnocentric rg.otf')), 16)
+        self.font_1 = pygame.font.Font((os.path.join('Assets','Fonts','ethnocentricrg.otf')), 24)
+        self.font_2 = pygame.font.Font((os.path.join('Assets','Fonts','ethnocentricrg.otf')), 16)
         self.logo = self.font_1.render('Super Alien Destroyer X',True ,(0,255,0))
         self.logo_rect = self.logo.get_rect()
         self.logo_rect.center = (300,200)

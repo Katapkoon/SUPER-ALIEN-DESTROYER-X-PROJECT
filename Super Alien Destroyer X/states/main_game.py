@@ -3,6 +3,8 @@ import math
 import random
 from states.state import State
 from star_animation import Background
+from planet import Planet
+from moon import Moon
 from player import Player
 from score import Score
 from enemy_spawner import EnemySpawner
@@ -45,6 +47,12 @@ class MainGame(State):
         self.stars_anim = Background()
         self.star_imgs_group = pygame.sprite.Group()
         self.star_imgs_group.add(self.stars_anim)
+        self.planet = Planet()
+        self.planet_group = pygame.sprite.Group()
+        self.planet_group.add(self.planet)
+        self.moon = Moon()
+        self.moon_group = pygame.sprite.Group()
+        self.moon_group.add(self.moon)
 
         #Initialize Player Elements
         self.player = Player(70,70)
@@ -124,6 +132,8 @@ class MainGame(State):
 
         #Update objects
         self.star_imgs_group.update()
+        self.planet_group.update()
+        self.moon_group.update()
         self.sprite_group.update()
         self.enemy_spawner.update()
         self.player.bullets.update()
@@ -271,6 +281,8 @@ class MainGame(State):
         display.blit(self.background, (0,0))
         display.blit(self.score.text,(self.score.x,self.score.y))
         self.star_imgs_group.draw(display)
+        self.planet_group.draw(display)
+        self.moon_group.draw(display)
         self.sprite_group.draw(display)
         self.enemy_spawner.enemy_group.draw(display)
         for enemy in self.enemy_spawner.enemy_group:

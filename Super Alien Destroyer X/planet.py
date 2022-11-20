@@ -11,7 +11,7 @@ class Planet(pygame.sprite.Sprite):
             self.images.append(img)
         self.anim_index = 0
         self.max_anim_index = len(self.images) - 1
-        self.max_frame_duration = 5
+        self.max_frame_duration = 3
         self.frame_duration = self.max_frame_duration
         self.image = self.images[self.anim_index]
         self.rect = self.image.get_rect()
