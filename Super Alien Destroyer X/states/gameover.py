@@ -1,5 +1,4 @@
 import pygame
-import pygame_gui
 import os
 from states.state import State
 from menu_button import Button

@@ -22,7 +22,7 @@ class Player(pygame.sprite.Sprite):
         self.bullets = pygame.sprite.Group()
         self.speed = 15
         self.hp = 4000
-        self.lives = 1
+        self.lives = 3
         self.vulnerable_sound = pygame.mixer.Sound(os.path.join('Assets','damaged.wav'))
         self.health_border = HealthBorder(self.hp,self.lives)
         self.health_border_group = pygame.sprite.Group()

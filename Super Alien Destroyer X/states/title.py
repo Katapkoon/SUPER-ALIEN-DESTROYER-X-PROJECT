@@ -8,17 +8,24 @@ from star_animation import Background
 from player import Player
 import pygame
 import os
+import math
 
 class Title(State):
     def __init__(self, game):
         State.__init__(self, game)
 
         #Initialize menu elements
-        self.font = pygame.font.Font((os.path.join('Assets','Fonts','ethnocentric rg.otf')), 16)
+        self.font_1 = pygame.font.Font((os.path.join('Assets','Fonts','ethnocentric rg.otf')), 24)
+        self.font_2 = pygame.font.Font((os.path.join('Assets','Fonts','ethnocentric rg.otf')), 16)
+        self.logo = self.font_1.render('Super Alien Destroyer X',True ,(0,255,0))
+        self.logo_rect = self.logo.get_rect()
+        self.logo_rect.center = (300,200)
         self.start_button_image = pygame.image.load(os.path.join('Assets','Menu','start_button.png')).convert_alpha()
+        self.start_button_image = pygame.transform.scale(self.start_button_image,(200,50))
         self.exit_button_image = pygame.image.load(os.path.join('Assets','Menu','exit_button.png')).convert_alpha()
-        self.about_text = self.font.render('About',True ,(0,255,0))
-        self.leaderboard_text = self.font.render('Leaderboard',True ,(0,255,0))
+        self.exit_button_image = pygame.transform.scale(self.exit_button_image,(200,50))
+        self.about_text = self.font_2.render('About',True ,(0,255,0))
+        self.leaderboard_text = self.font_2.render('Leaderboard',True ,(0,255,0))
         self.start_button = Button(300, 400, self.start_button_image)
         self.exit_button = Button(300, 600, self.exit_button_image)
         self.about_button = Button(900,650,self.about_text)
@@ -46,8 +53,23 @@ class Title(State):
 
         self.creator_name_image = pygame.image.load(os.path.join('Assets','name.png')).convert_alpha()
         self.creator_name =  pygame.transform.scale(self.creator_name_image,(500,30))
+
+        self.color = 0
+        self.ascending = True
+    def wave_color(self):
+        if self.ascending and self.color < 255:
+            self.color += 1
+        elif self.color == 255:
+            self.ascending = False
         
+        if not self.ascending:
+            self.color -= 1
+            if self.color == 0:
+                self.ascending = True
     def update(self, delta_time, actions):
+        self.wave_color()
+        self.logo = self.font_1.render('Super Alien Destroyer X',True ,(self.color,255,self.color))
+
         if self.ship_flying:
             self.ship.rect.y -= self.ship.speed
         if self.ship.rect.y < -150-150:
@@ -63,6 +85,7 @@ class Title(State):
         
     def render(self, display):
         display.fill((0,0,0))
+        display.blit(self.logo,(self.logo_rect.x,self.logo_rect.y))
         #self.game.draw_text(display, "Titlescreen", (0,0,0), self.game.width/2, self.game.height/2)
         if self.start_button.update(display):
             self.ship_flying = True
